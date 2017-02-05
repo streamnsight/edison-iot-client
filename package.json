@@ -1,0 +1,10 @@
+{
+  "name": "edison-iot-client",
+  "version": "0.0.1",
+  "dependencies": {
+    "edison-io": "^0.10.0",
+    "ip": "^1.1.4",
+    "johnny-five": "^0.10.6",
+    "ws": "^1.1.1"
+  }
+}
