@@ -29,7 +29,7 @@ const WebSocket = require('ws');
 // flag to check on Websocket open
 var wsReady = false;
 // Websocket server URL
-const wsServerURL = 'ws://192.168.20.103/input';
+const wsServerURL = 'ws://192.168.20.103:3000/input';
 // create connection
 const ws = new WebSocket(wsServerURL);
 // on connection open, set wsReady flag
