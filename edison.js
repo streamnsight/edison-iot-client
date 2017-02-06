@@ -19,7 +19,8 @@ var sensors = {
     potentiometer: true,
     sound: false,
     temperature: true,
-    light: true
+    light: false,
+    button: true
 };
 
 
@@ -30,39 +31,64 @@ const WebSocket = require('ws');
 var wsReady = false;
 // Websocket server URL
 const wsServerURL = 'ws://192.168.20.103:3000/input';
+
+
 // create connection
-const ws = new WebSocket(wsServerURL);
+var ws = new WebSocket(wsServerURL);
+attachListeners();
+
 // on connection open, set wsReady flag
 function open() {
     wsReady = true;
 }
 
-function error(error){
+function error(error) {
     console.log(error);
 }
 
-function close(){
-   ws.connect(wsServerURL, open)
-}
-
-function sendData(data) {
-    if (wsReady) {
-        var message = {
-            'meta': {'id': ip.address()},
-            'data': data
-        };
-        ws.send(JSON.stringify(JSON.stringify(message)));
-    }
+function close() {
+    wsReady = false;
+    ws = new WebSocket(wsServerURL);
+    attachListeners();
 }
 
 function receiveData(data) {
 
 }
 
-ws.on('open', open);
-ws.on('error', error);
-ws.on('close', close);
-ws.on('message', receiveData);
+function attachListeners() {
+    ws.on('open', open);
+    ws.on('error', error);
+    ws.on('close', close);
+    ws.on('message', receiveData);
+}
+
+function sendData(data) {
+    if (wsReady) {
+        var d = new Date();
+        var message = {
+            'meta': {
+                'id': ip.address(),
+                'timestamp': d.toISOString()
+            },
+            'data': data
+        };
+        console.log(JSON.stringify(message));
+        ws.send(JSON.stringify(JSON.stringify(message)));
+    }
+}
+
+// use a running average to smooth out variability from the sensors
+function runningAverage(avg, new_sample, n) {
+    avg -= avg / n;
+    avg += new_sample / n;
+    return avg;
+}
+
+// if under threshold, will return
+function sendThreshold(new_value, avg, threshold) {
+    return Math.abs(avg - new_value) < threshold;
+}
 
 // on board ready, init sensors
 board.on("ready", function () {
@@ -88,8 +114,6 @@ board.on("ready", function () {
                 'inclination': this.inclination,
                 'orientation': this.orientation
             };
-
-            console.log(JSON.stringify(data));
             // if websocket open, send the data
             sendData(data);
         });
@@ -112,10 +136,10 @@ board.on("ready", function () {
 
     if (sensors.temperature) {
         // Plug the Temperature sensor module
-        // into the Grove Shield's A0 jack
+        // into the Grove Shield's A1 jack
         var thermometer = new five.Thermometer({
             controller: "GROVE",
-            pin: "A0"
+            pin: "A1"
         });
 
         // Init temperature variables
@@ -124,12 +148,12 @@ board.on("ready", function () {
         thermometer.on("data", function () {
 
             // skip if temperature didn't change
-            if (f === Math.round(this.fahrenheit)) {
+            if (sendThreshold(f, runningAverage(f, this.fahrenheit, 10), 1)) {
                 return;
             }
 
-            f = Math.round(this.fahrenheit);
-            c = Math.round(this.celsius);
+            f = runningAverage(f, this.fahrenheit, 10);
+            c = runningAverage(c, this.celsius, 10);
             sendData({'temperature_celsius': c, 'temperature_fahrenheit': f});
         });
     }
@@ -138,14 +162,15 @@ board.on("ready", function () {
         // Plug the Rotary Angle sensor module
         // into the Grove Shield's A0 jack
         var rotary = new five.Sensor("A0");
-        var p = 0;
+        var p      = 0;
+
         rotary.scale(0, 255).on("change", function () {
 
-            if (p === Math.round(this.value)) {
-                p = Math.round(this.value);
-                sendData({'potentiometer': p});
+            if (sendThreshold(p, runningAverage(p, this.value, 10), 1)) {
+                return;
             }
-
+            p = runningAverage(p, this.value, 10);
+            sendData({'potentiometer': p});
         });
     }
 
@@ -157,11 +182,13 @@ board.on("ready", function () {
         });
 
         var l = 0;
+
         light.on("change", function () {
-            if (l === Math.round(this.level)) {
-                l = Math.round(this.level);
-                sendData({"light": l});
+            if (sendThreshold(this.level, l, 1)) {
+                return;
             }
+            l = runningAverage(l, this.level, 5);
+            sendData({"light": l});
             //console.log("Ambient Light Level: ", this.level);
         });
     }
