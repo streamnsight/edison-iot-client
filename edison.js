@@ -143,7 +143,7 @@ board.on("ready", function () {
 
             if (p === Math.round(this.value)) {
                 p = Math.round(this.value);
-                sendData({'potentiometer': v});
+                sendData({'potentiometer': p});
             }
 
         });
@@ -158,9 +158,9 @@ board.on("ready", function () {
 
         var l = 0;
         light.on("change", function () {
-            if (l === Math.round(this.value)) {
-                l = Math.round(this.value);
-                sendData({"light": this.level});
+            if (l === Math.round(this.level)) {
+                l = Math.round(this.level);
+                sendData({"light": l});
             }
             //console.log("Ambient Light Level: ", this.level);
         });
