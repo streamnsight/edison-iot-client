@@ -2,47 +2,161 @@
  * Created by emmanuel on 2/4/17.
  */
 
-var five   = require("johnny-five");
+// import johnny5 framework
+var five = require("johnny-five");
+// import edison board plugin ofr johnny5
 var Edison = require("edison-io");
-var board  = new five.Board({
+// helper to easily capture the board's IP
+var ip = require('ip');
+// init board
+var board = new five.Board({
     io: new Edison()
 });
 
+// define what sensors are plugged in
+var sensors = {
+    accelerometer: true,
+    potentiometer: true,
+    sound: false,
+    temperature: true,
+    light: true
+};
+
+
+// Websocket Client
+// import websocket
 const WebSocket = require('ws');
-var ws_ready = false;
+// flag to check on Websocket open
+var wsReady = false;
+// Websocket server URL
+const wsServerURL = 'ws://192.168.20.35/input';
+// create connection
+const ws = new WebSocket(wsServerURL);
+// on connection open, set wsReady flag
+function open() {
+    wsReady = true;
+}
 
-const ws = new WebSocket('ws://192.168.20.35/input');
+function error(error){
+    console.log(error);
+}
 
-ws.on('open', function open() {
-    ws_ready = true;
-});
+function close(){
+   ws.connect(wsServerURL, open)
+}
 
-var ip = require('ip');
+function sendData(data) {
+    if (wsReady) {
+        var message = {
+            'meta': {'id': ip.address()},
+            'data': data
+        };
+        ws.send(JSON.stringify(JSON.stringify(message)));
+    }
+}
 
+function receiveData(data) {
+
+}
+
+ws.on('open', open);
+ws.on('error', error);
+ws.on('close', close);
+ws.on('message', receiveData);
+
+// on board ready, init sensors
 board.on("ready", function () {
 
-    // Plug the MMA7660 Accelerometer module
-    // into an I2C jack
-    var acceleration = new five.Accelerometer({
-        controller: "MMA7660"
-    });
+    if (sensors.accelerometer) {
+        // Plug the MMA7660 Accelerometer module
+        // into an I2C jack
+        var acceleration = new five.Accelerometer({
+            controller: "MMA7660"
+        });
 
-    acceleration.on("change", function () {
-        console.log("accelerometer");
-        console.log("  x            : ", this.x);
-        console.log("  y            : ", this.y);
-        console.log("  z            : ", this.z);
-        console.log("  pitch        : ", this.pitch);
-        console.log("  roll         : ", this.roll);
-        console.log("  acceleration : ", this.acceleration);
-        console.log("  inclination  : ", this.inclination);
-        console.log("  orientation  : ", this.orientation);
-        console.log("--------------------------------------");
+        // on accelerometer update,
+        acceleration.on("change", function () {
 
-        if (ws_ready) {
-            ws.send(JSON.stringify({'id': ip.address(), 'x': this.x, 'y': this.y, 'z': this.z }));
-        }
-    });
+            var data = {
+                'accel_x': this.x,
+                'accel_y': this.y,
+                'accel_z': this.z,
+                'pitch': this.pitch,
+                'roll': this.roll,
+                'yaw': this.yaw,
+                'acceleration': this.acceleration,
+                'inclination': this.inclination,
+                'orientation': this.orientation
+            };
 
+            console.log(JSON.stringify(data));
+            // if websocket open, send the data
+            sendData(data);
+        });
+    }
 
+    if (sensors.button) {
+        // Plug the Button module into the
+        // Grove Shield's D4 jack
+        var button = new five.Button(4);
+
+        // The following will data as the button is
+        // pressed and released.
+        button.on("press", function () {
+            sendData({'button': 'pressed'});
+        });
+        button.on("release", function () {
+            sendData({'button': 'released'});
+        });
+    }
+
+    if (sensors.temperature) {
+        // Plug the Temperature sensor module
+        // into the Grove Shield's A0 jack
+        var thermometer = new five.Thermometer({
+            controller: "GROVE",
+            pin: "A0"
+        });
+
+        // Init temperature variables
+        var f = 0, c = 0;
+
+        thermometer.on("data", function () {
+
+            // skip if temperature didn't change
+            if (f === Math.round(this.fahrenheit)) {
+                return;
+            }
+
+            f = Math.round(this.fahrenheit);
+            c = Math.round(this.celsius);
+            sendData({'temperature_celsius': c, 'temperature_fahrenheit': f});
+        });
+    }
+
+    if (sensors.potentiometer) {
+        // Plug the Rotary Angle sensor module
+        // into the Grove Shield's A0 jack
+        var rotary = new five.Sensor("A0");
+        rotary.scale(0, 255).on("change", function () {
+            sendData({'potentiometer': this.value});
+        });
+    }
+
+    if (sensors.light) {
+        // Plug the Grove TSL2561 Light sensor module
+        // into an I2C jack
+        var light = new five.Light({
+            controller: "TSL2561"
+        });
+
+        light.on("change", function () {
+            sendData({"light": this.level});
+            //console.log("Ambient Light Level: ", this.level);
+        });
+    }
+
+    if (sensors.sound) {
+        console.log("sound sensor not supported");
+    }
 });
