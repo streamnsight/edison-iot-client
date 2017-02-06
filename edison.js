@@ -138,8 +138,14 @@ board.on("ready", function () {
         // Plug the Rotary Angle sensor module
         // into the Grove Shield's A0 jack
         var rotary = new five.Sensor("A0");
+        var p = 0;
         rotary.scale(0, 255).on("change", function () {
-            sendData({'potentiometer': this.value});
+
+            if (p === Math.round(this.value)) {
+                p = Math.round(this.value);
+                sendData({'potentiometer': v});
+            }
+
         });
     }
 
@@ -150,8 +156,12 @@ board.on("ready", function () {
             controller: "TSL2561"
         });
 
+        var l = 0;
         light.on("change", function () {
-            sendData({"light": this.level});
+            if (l === Math.round(this.value)) {
+                l = Math.round(this.value);
+                sendData({"light": this.level});
+            }
             //console.log("Ambient Light Level: ", this.level);
         });
     }
