@@ -20,9 +20,11 @@ var sensors = {
     sound: false,
     temperature: true,
     light: false,
-    button: true
+    button: true,
+    lcd: true
 };
 
+var lcd = null;
 
 // Websocket Client
 // import websocket
@@ -30,7 +32,7 @@ const WebSocket = require('ws');
 // flag to check on Websocket open
 var wsReady = false;
 // Websocket server URL
-const wsServerURL = 'ws://192.168.20.103:3000/input';
+const wsServerURL = 'ws://192.168.20.38:3001/input';
 
 
 // create connection
@@ -48,12 +50,19 @@ function error(error) {
 
 function close() {
     wsReady = false;
-    ws = new WebSocket(wsServerURL);
+    ws      = new WebSocket(wsServerURL);
     attachListeners();
 }
 
 function receiveData(data) {
-
+    try {
+        var message = JSON.parse(data);
+        if (lcd) {
+            var lcd_text = message.data && message.data.lcd ? message.data.lcd : "error";
+            lcd.cursor(0, 0).print(lcd_text.substring(0,16));
+            lcd.cursor(1, 0).print(lcd_text.substring(15,16));
+        }
+    }
 }
 
 function attachListeners() {
@@ -65,7 +74,7 @@ function attachListeners() {
 
 function sendData(data) {
     if (wsReady) {
-        var d = new Date();
+        var d       = new Date();
         var message = {
             'meta': {
                 'id': ip.address(),
@@ -92,6 +101,12 @@ function sendThreshold(new_value, avg, threshold) {
 
 // on board ready, init sensors
 board.on("ready", function () {
+
+    if (sensors.lcd) {
+        lcd = new five.LCD({
+            controller: "JHD1313M1"
+        });
+    }
 
     if (sensors.accelerometer) {
         // Plug the MMA7660 Accelerometer module
