@@ -20,9 +20,11 @@ var sensors = {
     sound: false,
     temperature: true,
     light: false,
-    button: true
+    button: true,
+    lcd: true
 };
 
+var lcd = null;
 
 // Websocket Client
 // import websocket
@@ -30,7 +32,7 @@ const WebSocket = require('ws');
 // flag to check on Websocket open
 var wsReady = false;
 // Websocket server URL
-const wsServerURL = 'ws://192.168.20.103:3000/input';
+const wsServerURL = 'ws://192.168.20.105:3001/input';
 
 
 // create connection
@@ -48,12 +50,23 @@ function error(error) {
 
 function close() {
     wsReady = false;
-    ws = new WebSocket(wsServerURL);
+    ws      = new WebSocket(wsServerURL);
     attachListeners();
 }
 
 function receiveData(data) {
-
+    try {
+        var message = JSON.parse(data);
+        console.log(message);
+        if (lcd) {
+            var lcd_text = message.data && message.data.lcd && message.data.lcd.text ? message.data.lcd.text : "error";
+            lcd.cursor(0, 0).print(lcd_text.substring(0,16));
+            lcd.cursor(1, 0).print(lcd_text.substring(16,32));
+        }
+    }
+    catch (e) {
+        console.log(e.message);
+    }
 }
 
 function attachListeners() {
@@ -65,7 +78,7 @@ function attachListeners() {
 
 function sendData(data) {
     if (wsReady) {
-        var d = new Date();
+        var d       = new Date();
         var message = {
             'meta': {
                 'id': ip.address(),
@@ -74,7 +87,7 @@ function sendData(data) {
             'data': data
         };
         console.log(JSON.stringify(message));
-        ws.send(JSON.stringify(JSON.stringify(message)));
+        ws.send(JSON.stringify(message));
     }
 }
 
@@ -92,6 +105,12 @@ function sendThreshold(new_value, avg, threshold) {
 
 // on board ready, init sensors
 board.on("ready", function () {
+
+    if (sensors.lcd) {
+        lcd = new five.LCD({
+            controller: "JHD1313M1"
+        });
+    }
 
     if (sensors.accelerometer) {
         // Plug the MMA7660 Accelerometer module
