@@ -59,7 +59,7 @@ git clone https://github.com/streamnsight/edison-iot-client.git
 
 ### Run (the code)!
 
-You can run the code by ssh'ing ot the board and running:
+You can run the code by ssh'ing to the board and running:
 
 ```bash
 ssh root@<IP_OF_BOARD>
