@@ -60,7 +60,9 @@ function receiveData(data) {
         console.log(message);
         if (lcd) {
             var lcd_text = message.data && message.data.lcd && message.data.lcd.text ? message.data.lcd.text : "error";
-            lcd.cursor(0, 0).print(lcd_text.substring(0,16));
+            lcd.cursor(0, 0).print("                "); //clear LCD
+            lcd.cursor(1, 0).print("                ");
+            lcd.cursor(0, 0).print(lcd_text.substring(0,16)); //print
             lcd.cursor(1, 0).print(lcd_text.substring(16,32));
         }
     }
