@@ -25,7 +25,8 @@ var sensors = {
     lcd: true
 };
 
-var lcd = null;
+var lcd  = null;
+var data = {};
 
 // Websocket Client
 // import websocket
@@ -62,8 +63,8 @@ function receiveData(data) {
             var lcd_text = message.data && message.data.lcd && message.data.lcd.text ? message.data.lcd.text : "error";
             lcd.cursor(0, 0).print("                "); //clear LCD
             lcd.cursor(1, 0).print("                ");
-            lcd.cursor(0, 0).print(lcd_text.substring(0,16)); //print
-            lcd.cursor(1, 0).print(lcd_text.substring(16,32));
+            lcd.cursor(0, 0).print(lcd_text.substring(0, 16)); //print
+            lcd.cursor(1, 0).print(lcd_text.substring(16, 32));
         }
     }
     catch (e) {
@@ -78,18 +79,26 @@ function attachListeners() {
     ws.on('message', receiveData);
 }
 
-function sendData(data) {
+var timeout = null;
+
+function sendData(new_data) {
     if (wsReady) {
-        var d       = new Date();
-        var message = {
-            'meta': {
-                'id': ip.address(),
-                'timestamp': d.toISOString()
-            },
-            'data': data
-        };
-        console.log(JSON.stringify(message));
-        ws.send(JSON.stringify(message));
+        Object.assign(data, new_data);
+        if (timeout === null) {
+            var d       = new Date();
+            var message = {
+                'meta': {
+                    'id': ip.address(),
+                    'timestamp': d.toISOString()
+                },
+                'data': data
+            };
+            console.log(JSON.stringify(message));
+            ws.send(JSON.stringify(message));
+            timeout = setTimeout(function () {
+                timeout = null;
+            }, 1000);
+        }
     }
 }
 
