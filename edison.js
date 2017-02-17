@@ -1,7 +1,7 @@
 /**
  * Created by emmanuel on 2/4/17.
  */
-
+var os = require('os');
 var SERVER_IP = os.getenv('SERVER_IP');
 // import johnny5 framework
 var five = require("johnny-five");
