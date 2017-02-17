@@ -57,6 +57,15 @@ cd sshfs_folder
 git clone https://github.com/streamnsight/edison-iot-client.git
 ```
 
+### Set Remote Server IP
+
+You are almost ready to run the client data streamer. We'll be streaming to a common server.
+Ask you friendly Javascript Meetup host for the IP of the server to send the data to, and set the `SERVER_IP` variable on your board
+
+```bash
+export SERVER_IP=192.168.X.XXX
+```
+
 ### Run (the code)!
 
 You can run the code by ssh'ing to the board and running:

@@ -1,8 +1,8 @@
 /**
  * Created by emmanuel on 2/4/17.
  */
-var os = require('os');
-var SERVER_IP = os.getenv('SERVER_IP');
+
+var SERVER_IP = process.env['SERVER_IP'];
 // import johnny5 framework
 var five = require("johnny-five");
 // import edison board plugin ofr johnny5
@@ -33,7 +33,7 @@ const WebSocket = require('ws');
 // flag to check on Websocket open
 var wsReady = false;
 // Websocket server URL
-const wsServerURL = 'ws://' + SERVR_IP + ':3001/input';
+const wsServerURL = 'ws://' + SERVER_IP + ':3001/input';
 
 // create connection
 var ws = new WebSocket(wsServerURL);
