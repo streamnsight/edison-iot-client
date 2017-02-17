@@ -34,7 +34,6 @@ var wsReady = false;
 // Websocket server URL
 const wsServerURL = 'ws://192.168.20.105:3001/input';
 
-
 // create connection
 var ws = new WebSocket(wsServerURL);
 attachListeners();
@@ -57,6 +56,7 @@ function close() {
 function receiveData(data) {
     try {
         var message = JSON.parse(data);
+<<<<<<< HEAD
         console.log(message);
         if (lcd) {
             var lcd_text = message.data && message.data.lcd && message.data.lcd.text ? message.data.lcd.text : "error";
@@ -69,6 +69,14 @@ function receiveData(data) {
     catch (e) {
         console.log(e.message);
     }
+=======
+        if (lcd) {
+            var lcd_text = message.data && message.data.lcd ? message.data.lcd : "error";
+            lcd.cursor(0, 0).print(lcd_text.substring(0,16));
+            lcd.cursor(1, 0).print(lcd_text.substring(15,16));
+        }
+    }
+>>>>>>> 44b3f431b09dee4ba1735e3eb9da18e978a42a7a
 }
 
 function attachListeners() {
