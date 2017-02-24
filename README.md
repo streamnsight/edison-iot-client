@@ -1,13 +1,22 @@
 # Setting up the board
 
 You'll need to have setup the WiFi network for the board before you can do anything.
+You can do this through a UI if you get the software, or you can do it through USB serial communication on the terminal.
 
-Get the Edison board SDK for your OS:
+## Set up WiFi
+
+### With the UI: get the Edison board SDK for your OS:
 
 https://software.intel.com/en-us/iot/hardware/edison/downloads
 
 - Configure WiFi
 - Configure hostname and SSH
+
+### With command line
+
+Depending on your OS, follow these instruction:
+https://software.intel.com/en-us/setting-up-serial-terminal-intel-edison-board
+
 
 You should then have access to the IP address of the board and be able to SSH to it.
 
@@ -17,19 +26,20 @@ to connect to the board:
 
 ## Setup the code on the board
 
-The easiest way to setup the code on the board and be able to edit it on your laptop, is to use `sshfs`
+There are several ways to get the code on the board:
+ssh to the board and git clone the repository. You'll have the code on the board.
 
-`sshfs` will mount the device file system on your laptop (like a share drive) and you can then close the code into the folder
+If you want to edit remotely, the easiest way to setup the code on the board and be able to edit it on your laptop, is to use `sshfs`
+
+`sshfs` will mount the device file system on your laptop (like a share drive) and you can then clone the code into the folder
 
 ### Install SSHFS
 
 On a Mac:
-- Open a terminal window:
 
-```bash
-brew install Caskroom/cask/osxfuse
-brew install homebrew/fuse/sshfs
-```
+download and install:
+
+https://github.com/osxfuse/sshfs/releases
 
 On Windows:
 
